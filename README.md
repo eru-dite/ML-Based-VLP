@@ -1,14 +1,29 @@
 # Machine Learning-Based Visible Light Positioning
 
+[![Python](https://img.shields.io/badge/Python-3.x-blue?logo=python\&logoColor=white)](https://www.python.org/)
+[![Jupyter Notebook](https://img.shields.io/badge/Jupyter-Notebook-orange?logo=jupyter\&logoColor=white)](https://jupyter.org/)
+[![Pandas](https://img.shields.io/badge/Pandas-Data%20Analysis-150458?logo=pandas\&logoColor=white)](https://pandas.pydata.org/)
+[![NumPy](https://img.shields.io/badge/NumPy-Numerical%20Computing-013243?logo=numpy\&logoColor=white)](https://numpy.org/)
+[![Matplotlib](https://img.shields.io/badge/Matplotlib-Visualization-11557c)](https://matplotlib.org/)
+[![Scikit--learn](https://img.shields.io/badge/Scikit--learn-Machine%20Learning-F7931E?logo=scikit-learn\&logoColor=white)](https://scikit-learn.org/)
+
 A machine learning approach to indoor positioning using optical signal measurements from multiple visible light luminaires.
 
 ## Overview
 
-Visible Light Positioning (VLP) uses light-emitting luminaires as reference sources to estimate the position of a receiver. Instead of relying on traditional geometric positioning methods, this project investigates whether machine learning models can learn the relationship between received optical signals and the corresponding receiver coordinates.
+Visible Light Positioning (VLP) uses light-emitting luminaires as reference sources to estimate the position of a receiver.
 
-The model takes optical signal measurements from multiple luminaires as input and predicts the two-dimensional position of the receiver:
+This project investigates whether machine learning models can learn the relationship between optical signal measurements received from multiple luminaires and the corresponding two-dimensional position of a receiver.
 
-**Optical signal measurements → Machine learning model → (x, y) position**
+The system follows the relationship:
+
+**Optical signal measurements → Machine learning model → Receiver position (x, y)**
+
+Three regression models were evaluated:
+
+* Random Forest
+* K-Nearest Neighbours (KNN)
+* Multi-Layer Perceptron (MLP)
 
 ## Dataset
 
@@ -16,44 +31,54 @@ The dataset contains:
 
 * **7,344 samples**
 * **11 optical signal features** (`L1`–`L11`)
-* **2 position coordinates** (`x`, `y`)
+* **2 target coordinates** (`x`, `y`)
 
-Each sample represents optical measurements received from multiple luminaires at a known receiver position.
+The `L1`–`L11` features represent optical signal measurements associated with different luminaires, while `x` and `y` represent the actual receiver position.
 
-The luminaire locations used in the project are provided in `luminaire_locations.csv`.
+The luminaire coordinates used in the project are provided in `luminaire_locations.csv`.
 
 > **Note:** The original `Public_VLP_Dataset.csv` is not included in this repository. It is excluded through `.gitignore` because it is an external dataset.
 
 ## Methodology
 
-### 1. Data Preparation
+### Data Preparation
 
 The 11 optical signal measurements were used as input features:
 
-`L1, L2, L3, ..., L11`
+```text
+L1, L2, L3, ..., L11
+```
 
-The target variables were the receiver coordinates:
+The target variables were:
 
-`x, y`
+```text
+x, y
+```
 
 The dataset was divided into:
 
 * **80% training data**
 * **20% testing data**
 
-### 2. Machine Learning Models
+### Machine Learning Models
 
-Three regression approaches were evaluated:
+Three regression approaches were trained and evaluated:
 
-* Random Forest Regressor
-* K-Nearest Neighbours (KNN) Regressor
-* Multi-Layer Perceptron (MLP) Regressor
+**Random Forest Regressor**
 
-The models were trained to predict the receiver's two-dimensional position directly from the optical signal measurements.
+An ensemble tree-based model used to learn nonlinear relationships between optical signal measurements and receiver position.
+
+**K-Nearest Neighbours (KNN)**
+
+A distance-based regression method that predicts position using neighbouring samples in the feature space.
+
+**Multi-Layer Perceptron (MLP)**
+
+A feedforward neural network used to model the nonlinear relationship between optical measurements and receiver coordinates.
 
 ## Results
 
-Performance was evaluated using the mean Euclidean positioning error between the predicted and actual receiver positions.
+The models were evaluated using the **mean Euclidean positioning error**, which represents the average physical distance between the predicted and actual receiver positions.
 
 | Model             | Mean Positioning Error |
 | ----------------- | ---------------------: |
@@ -61,21 +86,19 @@ Performance was evaluated using the mean Euclidean positioning error between the
 | MLP               |               11.68 cm |
 | KNN               |               11.69 cm |
 
-The **Random Forest model achieved the best performance**, with an average positioning error of approximately **9.83 cm** on the test set.
+The **Random Forest model achieved the best performance**, with a mean positioning error of approximately **9.83 cm** on the test set.
 
 ### Random Forest Error Analysis
 
-Additional analysis of the Random Forest predictions showed:
+| Metric          | Positioning Error |
+| --------------- | ----------------: |
+| Minimum         |           0.41 cm |
+| Median          |           8.58 cm |
+| Mean            |           9.83 cm |
+| 95th percentile |          19.72 cm |
+| Maximum         |            3.05 m |
 
-| Metric          |    Error |
-| --------------- | -------: |
-| Minimum error   |  0.41 cm |
-| Median error    |  8.58 cm |
-| Mean error      |  9.83 cm |
-| 95th percentile | 19.72 cm |
-| Maximum error   |   3.05 m |
-
-The large maximum error indicates that while most predictions were relatively close to the true positions, a small number of samples produced substantially larger errors.
+The majority of predictions were relatively close to the actual receiver positions, although a small number of samples produced substantially larger errors.
 
 ## Visual Results
 
@@ -83,13 +106,13 @@ The large maximum error indicates that while most predictions were relatively cl
 
 ![Actual vs Predicted Positions](Figures/actual_vs_predicted.png)
 
-The predicted positions closely follow the actual receiver positions across most of the test samples.
+The predicted positions generally follow the distribution of the actual receiver positions.
 
 ### Positioning Error Distribution
 
 ![Positioning Error Distribution](Figures/error_distribution.png)
 
-Most positioning errors are concentrated at relatively small distances, although a small number of larger errors are present.
+The error distribution shows that most predictions have relatively small positioning errors, with a smaller number of larger errors.
 
 ### Model Comparison
 
@@ -101,28 +124,33 @@ Random Forest produced the lowest mean positioning error among the three evaluat
 
 ![Feature Importance](Figures/feature_importance.png)
 
-The Random Forest feature importance analysis indicates that **L4, L1, and L9** contributed most strongly to the model's predictions. Together, these three features accounted for approximately **66% of the total feature importance**.
+The Random Forest feature importance analysis identified **L4, L1, and L9** as the three most influential input features.
+
+Together, these features accounted for approximately **66% of the total feature importance**.
 
 ## Limitations
 
-The current evaluation uses a random train-test split. Because VLP measurements from spatially neighbouring positions may be similar, a random split can produce an optimistic estimate of spatial generalization.
+The current evaluation uses a random train-test split.
 
-A more rigorous evaluation would use a **spatial holdout strategy**, where locations or regions are excluded from the training data and used exclusively for testing.
+Because measurements from spatially neighbouring positions can be similar, randomly distributing samples between the training and testing sets may produce an optimistic estimate of spatial generalization.
 
-The current work therefore demonstrates the feasibility of machine learning-based VLP on the selected dataset but does not yet establish performance on previously unseen spatial regions.
+A more rigorous evaluation would use a **spatial holdout strategy**, where specific locations or regions are excluded from training and used exclusively for testing.
+
+Therefore, the current results demonstrate the feasibility of machine learning-based VLP on the selected dataset but do not yet establish performance on completely unseen spatial regions.
 
 ## Future Work
 
 Future development could investigate:
 
 * Spatially separated training and testing regions
-* Additional regression and deep learning models
 * Hyperparameter optimization
+* Additional regression and deep learning models
 * Feature selection and dimensionality reduction
 * Robustness to measurement noise
-* Real-time inference on embedded hardware
+* Real-time positioning
+* Embedded deployment
+* Edge AI implementation
 * Integration with visible light communication systems
-* Edge AI implementation for low-power positioning devices
 
 ## Repository Structure
 
@@ -142,20 +170,15 @@ ML-Based-VLP/
 └── .gitignore
 ```
 
-## Technologies
+## Reproducibility
 
-* Python
-* Pandas
-* NumPy
-* Matplotlib
-* Scikit-learn
-* Jupyter Notebook
+The analysis was implemented in Python using Jupyter Notebook.
 
-## Project Focus
+Required Python packages are listed in `Requirements.txt`.
 
-This project sits at the intersection of:
+The notebook contains the complete workflow:
 
-**Machine Learning • Visible Light Positioning • Optical Wireless Communication • Indoor Positioning • Intelligent Sensing**
+**Data loading → Data preparation → Model training → Prediction → Error analysis → Model comparison → Feature importance**
 
 ## Author
 
@@ -164,60 +187,6 @@ This project sits at the intersection of:
 Electrical/Electronics Engineering
 University of Benin
 
-Research interests include intelligent sensing, embedded systems, optical wireless systems, and machine learning for sensing applications.
-
-
-\* NumPy
-
-\* Matplotlib
-
-\* Scikit-learn
-
-\* Google Colab
-
-
-
-\## Repository Structure
-
-
-
-```text
-
-ML-Based-VLP/
-
-│
-
-├── figures/
-
-│   ├── actual\_vs\_predicted.png
-
-│   ├── error\_distribution.png
-
-│   ├── feature\_importance.png
-
-│   └── model\_comparison.png
-
-│
-
-├── ML\_Based\_VLP.ipynb
-
-├── README.md
-
-└── requirements.txt
-
-```
-
-
-
-\## Author
-
-
-
-\*\*Goodnews Osama Imakpokpomwan\*\*
-
-
-
-Electrical/Electronics Engineering | Intelligent Sensing | Embedded Systems | Photonics \& AI Hardware
-
+Research interests include intelligent sensing, embedded systems, optical wireless systems, machine learning, and AI-enabled sensing.
 
 
